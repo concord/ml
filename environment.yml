@@ -1,5 +1,6 @@
 name: bfd
 dependencies:
+- flake8
 - matplotlib=1.4
 - notebook=4.0
 - numpy=1.10
