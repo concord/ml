@@ -22,4 +22,4 @@ def get_stock_prices(ticker, start_date, end_date=None):
                                    end_date.isoformat())
 
     for day in prices:
-        yield day["Open"], day["Close"]
+        yield float(day["Open"]), float(day["Close"])
