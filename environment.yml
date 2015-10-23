@@ -8,3 +8,4 @@ dependencies:
 - scipy=0.16
 - pip:
     - concord-py==0.3
+    - yahoo-finance>=1.2
