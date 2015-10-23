@@ -19,26 +19,26 @@ class Distribution(object):
     distribution fitted on 2 observations, and so on.
     """
 
-    def pdf(self, data):
+    def pdf(self, observation):
         """ Get the prob density of the observation conditioned on run length.
 
         Note that calling pdf _does not_ automatically call update. You
         must do this manually.
 
         Args:
-            data: Latest observtion
+            observation: Latest observtion
         Returns:
             A 1-D array of floats, where pdf[t] is the probability
-            density of data assuming that the run length is t and given
+            density of observation assuming that the run length is t and given
             our fitted hyperparameters.
-            pdf[t] = p(data | r=t, hyperparameters)
+            pdf[t] = p(observation | r=t, hyperparameters)
         """
         raise NotImplementedError
 
-    def update(self, data):
+    def update(self, observation):
         """ Update the hyperparameters given the current observation
         Args:
-            data: The latest observation
+            observation: The latest observation
         Returns:
             None
         """
@@ -66,33 +66,33 @@ class Gaussian(Distribution):
         self.alpha0 = self.alpha = np.array([alpha])  # Gamma
         self.beta0 = self.beta = np.array([beta])     # Sum of Squares
 
-    def pdf(self, data):
-        """ Calculate probability density at data at all possible run lengths.
+    def pdf(self, observation):
+        """ Calculate probability density at observation at all possible run lengths.
 
         This does _not_ automatically call update.
 
         Args:
-            data: float that is the latest observtion
+            observation: float that is the latest observtion
         Returns:
             A 1-D array of floats, whose length is equal to the number
             of times update is called
         """
         scale = np.sqrt(self.beta / self.kappa)
-        return stats.norm.pdf(x=data, loc=self.mu, scale=scale)
+        return stats.norm.pdf(x=observation, loc=self.mu, scale=scale)
 
-    def update(self, data):
+    def update(self, observation):
         """ Update the hyperparameters
 
         Args:
-            data: float that is the latest observation
+            observation: float that is the latest observation
         Returns:
             None
         """
 
         new_kappa = self.kappa + 1
-        new_mu = (self.kappa * self.mu + data) / (self.kappa + 1)
+        new_mu = (self.kappa * self.mu + observation) / (self.kappa + 1)
         new_alpha = (self.alpha + 0.5)
-        new_beta = self.beta + ((self.kappa * (data - self.mu) ** 2) /
+        new_beta = self.beta + ((self.kappa * (observation - self.mu) ** 2) /
                                 (2 * self.kappa + 1))
 
         self.kappa = np.concatenate([self.kappa0, new_kappa])
@@ -118,33 +118,34 @@ class StudentT(Distribution):
         self.alpha0 = self.alpha = np.array([alpha])  # Gamma
         self.beta0 = self.beta = np.array([beta])     # Sum of Squares
 
-    def pdf(self, data):
-        """ Calculate probability density at data at all possible run lengths.
+    def pdf(self, observation):
+        """ Calculate probability density at observation at all possible run lengths.
 
         This does _not_ automatically call update.
 
         Args:
-            data: float that is the latest observtion
+            observation: float that is the latest observtion
         Returns:
             A 1-D array of floats, whose length is equal to the number
             of times update is called
         """
         scale = np.sqrt(self.beta * (self.kappa + 1) /
                         (self.alpha * self.kappa))
-        return stats.t.pdf(x=data, df=2*self.alpha, loc=self.mu, scale=scale)
+        return stats.t.pdf(x=observation, df=2*self.alpha, loc=self.mu,
+                           scale=scale)
 
-    def update(self, data):
+    def update(self, observation):
         """ Update the hyperparameters given the current observation
 
         Args:
-            data: float that is the latest observation
+            observation: float that is the latest observation
         Returns:
             None
         """
         new_kappa = self.kappa + 1
-        new_mu = (self.kappa * self.mu + data) / (self.kappa + 1)
+        new_mu = (self.kappa * self.mu + observation) / (self.kappa + 1)
         new_alpha = self.alpha + 0.5
-        new_beta = self.beta + (self.kappa * (data - self.mu ** 2) /
+        new_beta = self.beta + (self.kappa * (observation - self.mu ** 2) /
                                 (2 * self.kappa + 2))
 
         self.kappa = np.concatenate([self.kappa0, new_kappa])
