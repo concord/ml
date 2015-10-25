@@ -1,21 +1,25 @@
-from yahoo_finance import Share
 import datetime as dt
+from yahoo_finance import Share
 
 
-def get_stock_prices(ticker, start_date, end_date=dt.date.today()):
+def get_stock_prices(ticker, start_date, end_date=None):
     """Gets stock data from Yahoo Finance between dates, inclusive
 
     Args:
-        ticker (str): company ticker, i.e. GOOG
+        ticker (str): The company ticker (e.g. GOOG)
         start_date (datetime.date): date to begin collecting share prices
-        end_date (datetime.date):  date to end collecting share prices
+        end_date (datetime.date): date to end collecting share prices. Default
+            to today.
     Returns:
-        Iterable[(float, float)]: Iterator that returns a tuple
-        containing (open,close) share price
+        An iterable of (open, close) price tuples.
+        Iterable[(float, float)]
     """
+    if end_date is None:
+        end_date = dt.date.today()
+
     shares = Share(ticker)
     prices = shares.get_historical(start_date.isoformat(),
                                    end_date.isoformat())
 
     for day in prices:
-        yield day["Open"], day["Close"]
+        yield float(day["Open"]), float(day["Close"])
