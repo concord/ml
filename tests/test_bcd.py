@@ -1,8 +1,9 @@
 from __future__ import print_function, division
 import pytest
+import numpy as np
 
 from bcd import offline_changepoint_detection, BayesianChangepointDetection
-from bcd.distributions import StudentT
+from bcd.distributions import StudentT, Gaussian
 
 
 @pytest.fixture(scope="module")
@@ -21,4 +22,24 @@ def test_bcd_against_reference(hazard):
 
     for i, observation in enumerate(data):
         pr = detector.step(observation)
+        # we want 0th to ith elements inclusive, so + 2
         assert (pr == reference[:i + 2, i]).all()
+
+
+def test_gaussian():
+    g = Gaussian(0, 0, 0, 0)
+    g.update(2)
+    g.update(-1)
+    g.update(1)
+    g.update(0)
+
+    # hand-calculated parameters:
+    # kappa = [0, 1,   2,   3,   4]
+    # alpha = [0, 1/2, 1,   3/2, 2]
+    # mu =    [0, 0,   1/2, 0,   1/2]
+    # beta =  [0, 0,   1/4, 1,   5/2]
+
+    assert np.isclose(g.kappa, np.array([0, 1, 2, 3, 4])).all()
+    assert np.isclose(g.alpha, np.array([0, 0.5, 1, 1.5, 2])).all()
+    assert np.isclose(g.mu, np.array([0, 0, 0.5, 0, 0.5])).all()
+    assert np.isclose(g.beta, np.array([0, 0, 0.25, 1, 2.5])).all()

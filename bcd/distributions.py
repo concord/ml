@@ -1,6 +1,8 @@
 """ Defines prior distributions for bayesian changepoint detection
 """
 
+from __future__ import division
+
 from scipy import stats
 import numpy as np
 
@@ -52,8 +54,12 @@ class Gaussian(Distribution):
     Adapted from http://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf
     and http://goo.gl/gfyils.
 
+    The mean is estimated from kappa observations with sample mean mu.
+    The variance is estimated from 2 * alpha observations with sum of squared
+        deviations 2 * beta
+
     Args:
-        kappa: The prior for kappa
+        kappa: The prior for kappa -- the number of observations estimating mun
         mu:    The prior for mu
         alpha: The prior for alpha
         beta:  The prior for beta
@@ -61,10 +67,10 @@ class Gaussian(Distribution):
 
     def __init__(self, kappa, mu, alpha, beta):
         """ Initialize the prior distribution """
-        self.kappa0 = self.kappa = np.array([kappa])  # Certainty
-        self.mu0 = self.mu = np.array([mu])           # Mean
-        self.alpha0 = self.alpha = np.array([alpha])  # Gamma
-        self.beta0 = self.beta = np.array([beta])     # Sum of Squares
+        self.kappa0 = self.kappa = np.array([kappa])
+        self.mu0 = self.mu = np.array([mu])
+        self.alpha0 = self.alpha = np.array([alpha])
+        self.beta0 = self.beta = np.array([beta])
 
     def pdf(self, observation):
         """ Calculate probability density at observation at all possible run lengths.
@@ -77,8 +83,8 @@ class Gaussian(Distribution):
             A 1-D array of floats, whose length is equal to the number
             of times update is called
         """
-        scale = np.sqrt(self.beta / self.kappa)
-        return stats.norm.pdf(x=observation, loc=self.mu, scale=scale)
+        std = np.sqrt(self.beta / self.kappa)
+        return stats.norm.pdf(x=observation, loc=self.mu, scale=std)
 
     def update(self, observation):
         """ Update the hyperparameters
@@ -93,7 +99,7 @@ class Gaussian(Distribution):
         new_mu = (self.kappa * self.mu + observation) / (self.kappa + 1)
         new_alpha = (self.alpha + 0.5)
         new_beta = self.beta + ((self.kappa * (observation - self.mu) ** 2) /
-                                (2 * self.kappa + 1))
+                                (2 * self.kappa + 2))
 
         self.kappa = np.concatenate([self.kappa0, new_kappa])
         self.mu = np.concatenate([self.mu0, new_mu])
