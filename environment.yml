@@ -4,6 +4,7 @@ dependencies:
 - matplotlib=1.4
 - notebook=4.0
 - numpy=1.10
+- pytest=2.8
 - python=2.7
 - scipy=0.16
 - pip:
