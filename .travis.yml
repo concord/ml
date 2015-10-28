@@ -18,7 +18,7 @@ install:
 
 script:
   - flake8
-  - PYTHONPATH=.:PYTHONPATH py.test
+  - PYTHONPATH=.:PYTHONPATH py.test -v
 
 notifications:
   slack: 
