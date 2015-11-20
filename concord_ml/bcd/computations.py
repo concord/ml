@@ -1,21 +1,14 @@
 """Local implementation for Bayesian Changepoint Detection"""
 import numpy as np
-from concord.computation import (
-    Computation,
-    Metadata
-)
-
-# import logging
-# logging.basicConfig()
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
+from concord.computation import (Computation, Metadata)
+import datetime as dt
 
 
 class BayesianChangepointDetection(Computation):
     """ Bayesian Changepoint Detection implementation
     Based on algorithm from http://arxiv.org/abs/0710.3742.
     """
-    def __init__(self, hazard, distribution, istream=None, ostream=None):
+    def __init__(self, hazard, distribution, istream, ostream=[]):
         """ Constructor for BCD computation
 
         Args:
@@ -34,30 +27,33 @@ class BayesianChangepointDetection(Computation):
         self.ostream = ostream
         self.time = 0
         self.Pr = np.ones(1)
-
-    def init(self, ctx):
-        pass
-
-    def process_timer(self, ctx, key, time):
-        raise Exception('process_timer not implemented')
+        self.present = dt.date.min.isoformat()  # init w/ earliest date
 
     def process_record(self, ctx, record):
+        """ Sends A 1-D np.array of floats representing the probability
+            distribution of the current run length to all ostreams.
+            Output[r_0] is the probability that r=r_0 at time r_0.
+
+            Args:
+                record (Dict[str, str]): record.key contains isoformat
+                    timestamp associated with record.data.
         """
-        Returns:
-            A 1-D np.array of floats representing the probability
-            distribution of the current run length. Output[r_0] is the
-            probability that r=r_0 at time r_0.
-        """
-        result = self.step(float(record.data))
-        if self.ostream is not None:
-            for stream in self.ostream:
-                ctx.produce_record(stream, '~', result)
+        # Only process if timestamp of data is after self.present.
+        # Because isoformat() returns an ISO 8601 date string,
+        # we can use > and < to compare if incoming data is newer
+        # or older than the last piece of data we processed.
+        if record.key > self.present:
+            self.present = record.key  # Move up self.present
+            result = self.step(float(record.data))
+            if self.ostream is not None:
+                for stream in self.ostream:
+                    ctx.produce_record(stream, '~', result)
 
     def metadata(self):
         return Metadata(
             name='BayesianChangepointDetection',
-            istreams=[] if self.istream is None else self.istream,
-            ostreams=[] if self.ostream is None else self.ostream)
+            istreams=self.istream,
+            ostreams=self.ostream)
 
     def step(self, observation):
         """ Calculates the probability of a changepoint at the current time
