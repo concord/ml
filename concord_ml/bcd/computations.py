@@ -14,7 +14,7 @@ class BayesianChangepointDetection(object):
                          Callable[[int], float]
         distribution: The distribution that the time series is assumed to
                       follow. Should follow interface defined in
-                      `bcd.distributions.Distribution`.
+                      `concord_ml.bcd.distributions.Distribution`.
     """
     def __init__(self, hazard, distribution):
         self.hazard = hazard
