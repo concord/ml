@@ -31,7 +31,7 @@ class BayesianChangepointDetection(Computation):
 
     def process_record(self, ctx, record):
         """ Sends most probable run length to all ostreams.
-        
+
             Args:
                 record (Dict[str, str]): record.key contains isoformat
                     timestamp associated with record.data.
