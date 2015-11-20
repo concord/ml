@@ -8,7 +8,7 @@ setup(
     author='Andrew Aday, Alan Du, Carlos Martin, Dennis Wei',
     author_email='alanhdu@gmail.com',
     license='Apache',
-    packages=['bcd', 'data'],
+    packages=['concord_ml'],
     install_requires=[
         "yahoo-finance",
         "concord-py",
