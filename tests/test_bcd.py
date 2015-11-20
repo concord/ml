@@ -2,8 +2,9 @@ from __future__ import print_function, division
 import pytest
 import numpy as np
 
-from bcd import offline_changepoint_detection, BayesianChangepointDetection
-from bcd.distributions import Gaussian
+from concord_ml.bcd import (Gaussian,
+                            BayesianChangepointDetection,
+                            offline_changepoint_detection)
 
 
 @pytest.fixture(scope="module")
