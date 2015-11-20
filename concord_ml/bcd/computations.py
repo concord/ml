@@ -1,26 +1,63 @@
 """Local implementation for Bayesian Changepoint Detection"""
-
 import numpy as np
+from concord.computation import (
+    Computation,
+    Metadata
+)
+
+# import logging
+# logging.basicConfig()
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
-class BayesianChangepointDetection(object):
+class BayesianChangepointDetection(Computation):
     """ Bayesian Changepoint Detection implementation
-
     Based on algorithm from http://arxiv.org/abs/0710.3742.
+    """
+    def __init__(self, hazard, distribution, istream=None, ostream=None):
+        """ Constructor for BCD computation
 
-    Args:
-        hazard_function: A function that maps from the length of the current
-                         run to the probability of a changepoint.
-                         Callable[[int], float]
-        distribution: The distribution that the time series is assumed to
+        Args:
+            hazard: A function that maps from the length of the current
+                    run to the probability of a changepoint.
+                    Callable[[int], float]
+            distribution: The distribution that the time series is assumed to
                       follow. Should follow interface defined in
                       `concord_ml.bcd.distributions.Distribution`.
-    """
-    def __init__(self, hazard, distribution):
+            istream (List[str]): istreams the computation should listen to.
+            ostream (List[str]): ostreams the computation should produce to.
+        """
         self.hazard = hazard
         self.distribution = distribution
+        self.istream = istream
+        self.ostream = ostream
         self.time = 0
         self.Pr = np.ones(1)
+
+    def init(self, ctx):
+        pass
+
+    def process_timer(self, ctx, key, time):
+        raise Exception('process_timer not implemented')
+
+    def process_record(self, ctx, record):
+        """
+        Returns:
+            A 1-D np.array of floats representing the probability
+            distribution of the current run length. Output[r_0] is the
+            probability that r=r_0 at time r_0.
+        """
+        result = self.step(float(record.data))
+        if self.ostream is not None:
+            for stream in self.ostream:
+                ctx.produce_record(stream, '~', result)
+
+    def metadata(self):
+        return Metadata(
+            name='BayesianChangepointDetection',
+            istreams=[] if self.istream is None else self.istream,
+            ostreams=[] if self.ostream is None else self.ostream)
 
     def step(self, observation):
         """ Calculates the probability of a changepoint at the current time
@@ -37,7 +74,7 @@ class BayesianChangepointDetection(object):
 
         H = self.hazard(np.arange(self.time))
         old = self.Pr
-        self.Pr = np.zeros(self.time + 1)   # +1 because 0 <= r <= time
+        self.Pr = np.zeros(self.time + 1)  # +1 because 0 <= r <= time
 
         predprob = self.distribution.pdf(observation)
         self.distribution.update(observation)
