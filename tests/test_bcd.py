@@ -16,7 +16,9 @@ def hazard():
 
 def test_bcd_against_reference(hazard):
     data = [0] * 100 + [2] * 100
-    detector = BayesianChangepointDetection(hazard, Gaussian(0.1, 0.1, 1, 1))
+    istreams = []
+    ostreams = []
+    detector = BayesianChangepointDetection(hazard, Gaussian(0.1, 0.1, 1, 1), istreams, ostreams)
 
     reference = offline_changepoint_detection(data,
                                               hazard, Gaussian(0.1, 0.1, 1, 1))
