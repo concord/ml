@@ -84,7 +84,7 @@ class Gaussian(Distribution):
             of times update is called
         """
         variance = self.beta * (self.kappa + 1) / (self.alpha * self.kappa)
-        return stats.t.pdf(x=observation, df=2*self.alpha,
+        return stats.t.pdf(x=observation, df=2 * self.alpha,
                            loc=self.mu, scale=np.sqrt(variance))
 
     def update(self, observation):

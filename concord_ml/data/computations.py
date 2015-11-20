@@ -9,7 +9,7 @@ def current_time_millis():
     Returns: int
         The current time in milliseconds.
     """
-    return round(time.time() * 1000)
+    return int(time.time() * 1000)
 
 
 class Generator(Computation):
@@ -48,7 +48,7 @@ class Generator(Computation):
             return
 
         for stream in self.ostreams:
-            context.produce_record(stream, "key", value)
+            context.produce_record(stream, time, value)
         context.set_timer("{}_generator".format(self.name),
                           current_time_millis() + self.time_delta)
 
