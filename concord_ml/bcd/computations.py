@@ -30,10 +30,8 @@ class BayesianChangepointDetection(Computation):
         self.present = dt.date.min.isoformat()  # init w/ earliest date
 
     def process_record(self, ctx, record):
-        """ Sends A 1-D np.array of floats representing the probability
-            distribution of the current run length to all ostreams.
-            Output[r_0] is the probability that r=r_0 at time r_0.
-
+        """ Sends most probable run length to all ostreams.
+        
             Args:
                 record (Dict[str, str]): record.key contains isoformat
                     timestamp associated with record.data.
@@ -47,7 +45,7 @@ class BayesianChangepointDetection(Computation):
             result = self.step(float(record.data))
             if self.ostream is not None:
                 for stream in self.ostream:
-                    ctx.produce_record(stream, '~', result)
+                    ctx.produce_record(stream, '~', str(result.argmax()))
 
     def metadata(self):
         return Metadata(
