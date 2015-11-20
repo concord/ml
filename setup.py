@@ -9,6 +9,7 @@ setup(
     author_email='alanhdu@gmail.com',
     license='Apache',
     packages=['concord_ml'],
+    include_package_data=True,
     install_requires=[
         "yahoo-finance",
         "concord-py",
