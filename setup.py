@@ -11,11 +11,11 @@ setup(
     packages=['concord_ml'],
     include_package_data=True,
     install_requires=[
-        "yahoo-finance",
         "concord-py",
-        "scipy",
-        "pandas",
         "numpy",
+        "pandas",
+        "scikit-learn",
+        "scipy",
     ],
     classifiers=['Development Status :: 3 - Alpha'],
     zip_safe=False)
