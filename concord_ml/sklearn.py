@@ -6,7 +6,7 @@ import pandas as pd
 from concord.computation import Computation, Metadata
 
 
-class SklearnComputationMixin(Computation):
+class SklearnMixin(Computation):
     def __init__(self, name, model, istreams, ostream):
         self.istreams = istreams
         self.ostream = ostream
@@ -35,6 +35,10 @@ class SklearnComputationMixin(Computation):
                            json.dumps(prediction.tolist()))
 
 
-class SklearnPredictComputation(SklearnComputationMixin):
+class SklearnPredict(SklearnMixin):
     def process(self, data):
         return self.model.predict(data)
+
+class SklearnTransform(SklearnMixin):
+    def process(self, data):
+        return self.model.transform(data)
