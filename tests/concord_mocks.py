@@ -1,15 +1,41 @@
+from __future__ import division, print_function
+
 from collections import namedtuple
+from time import time as current_time
 
-Timer = namedtuple("Time", ["key", "time"])
-Record = namedtuple("Record", ["stream", "key", "data"])
+Record = namedtuple("Record", ["key", "data", "userStream"])
 
-class ComputationContextMock(object):
-    def __init__(self):
+class Runner(object):
+    def __init__(self, computations):
+        self.computations = {c.name: c for c in computations}
+        self.contexts = {c.name: ComputationContext(self, c)
+                         for c in computations}
+
+    def run(self):
+        for ctx in self.contexts.values():
+            ctx.computation.init(ctx)
+
+class ComputationContext(object):
+    def __init__(self, runner, computation):
+        self.runner = runner
+        self.computation = computation
+        self.subscribers = computation.metadata().ostreams
+
         self.records = []
-        self.timers = []
+
+    def __str__(self):
+        return "ComputationContext({})".format(self.computation.name)
+    def __repr__(self):
+        return "ComputationContext({})".format(self.computation.name)
 
     def produce_record(self, stream, key, data):
-        self.records.append(Record(stream, key, data))
+        assert isinstance(key, str)  # TODO Py3 compat
+        assert isinstance(data, str) # TODO Py3 compat
+        record = Record(key, data, stream)
+        self.records.append(record)
 
-    def set_timer(self, key, time):
-        self.timers.append(Timer(key, time))
+        for subscriber in self.subscribers:
+            ctx = self.runner.contexts[subscriber]
+            computation = self.runner.computations[subscriber]
+
+            computation.process_record(ctx, record)
