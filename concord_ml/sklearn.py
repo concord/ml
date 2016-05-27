@@ -6,7 +6,7 @@ import pandas as pd
 from concord.computation import Computation, Metadata
 
 
-class SklearnMixin(Computation):
+class SklearnBase(Computation):
     def __init__(self, name, model, istreams, ostream):
         self.istreams = istreams
         self.ostream = ostream
@@ -15,7 +15,7 @@ class SklearnMixin(Computation):
         self.name = name
 
     def init(self, ctx):
-        pass # TODO: Logging
+        pass
 
     def metadata(self):
         return Metadata(name=self.name,
@@ -26,7 +26,6 @@ class SklearnMixin(Computation):
         raise NotImplementedError
 
     def process_record(self, ctx, record):
-        # TODO: Real serialization
         data = pd.read_json(record.data, orient="records")
 
         prediction = self.process(data)
@@ -35,10 +34,11 @@ class SklearnMixin(Computation):
                            json.dumps(prediction.tolist()))
 
 
-class SklearnPredict(SklearnMixin):
+class SklearnPredict(SklearnBase):
     def process(self, data):
         return self.model.predict(data)
 
-class SklearnTransform(SklearnMixin):
+
+class SklearnTransform(SklearnBase):
     def process(self, data):
         return self.model.transform(data)

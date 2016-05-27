@@ -9,10 +9,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from concord.computation import Metadata, StreamGrouping
+from concord.computation import Metadata
 from concord_ml.sklearn import SklearnPredict, SklearnTransform
 
-from concord_mocks import Runner
+from concord_mocks import ComputationContext, Record
 
 
 iris = load_iris()
@@ -20,26 +20,6 @@ X_train, X_test, y_train, y_test = train_test_split(iris.data,
                                                     iris.target,
                                                     test_size=0.2,
                                                     random_state=42)
-predictor = LinearRegression()
-predictor.fit(X_train, y_train)
-
-transformer = Normalizer()
-transformer.fit(X_train)
-
-
-class IrisGenerator():
-
-    def __init__(self, name, ostream):
-        self.name = name
-        self.ostream = ostream
-
-    def init(self, ctx):
-        data = pd.DataFrame(X_test).to_json(orient="records")
-        ctx.produce_record(self.ostream, "iris-key", data)
-
-    def metadata(self):
-        return Metadata(name=self.name, istreams=[], ostreams=[self.ostream])
-
 
 @pytest.mark.parametrize("cls", [SklearnPredict, SklearnTransform])
 def test_sklearn_constructors(cls):
@@ -51,34 +31,39 @@ def test_sklearn_constructors(cls):
     assert m.ostreams == ["hello"]
 
 
-def test_sklearn_predict_computation():
-    generator = IrisGenerator("iris", "test-sklearn")
+def test_sklearn_predict():
+    predictor = LinearRegression()
+    predictor.fit(X_train, y_train)
 
-    istreams = [("iris", StreamGrouping.GROUP_BY)]
     computation = SklearnPredict("test-sklearn", predictor,
-                                 istreams=istreams, ostream=None)
-    runner = Runner([generator, computation])
-    runner.run()
+                                 istreams=[], ostream="out")
+    context = ComputationContext(computation)
 
-    records = runner.contexts["test-sklearn"].records
-    assert len(records) == 1
+    data = pd.DataFrame(X_test).to_json(orient="records")
+    computation.process_record(context, Record("predict", data, None))
 
-    record = records[0]
-    assert record.key == "iris-key"
+    assert len(context.records) == 1
+    assert len(context.records["out"]) == 1
+
+    record = context.records["out"][0]
+    assert record.key == "predict"
     assert np.allclose(predictor.predict(X_test), json.loads(record.data))
 
-def test_sklearn_transform_computation():
-    generator = IrisGenerator("iris", "test-sklearn")
 
-    istreams = [("iris", StreamGrouping.GROUP_BY)]
+def test_sklearn_transform():
+    transformer = Normalizer()
+    transformer.fit(X_train)
+
     computation = SklearnTransform("test-sklearn", transformer,
-                                   istreams=istreams, ostream=None)
-    runner = Runner([generator, computation])
-    runner.run()
+                                   istreams=[], ostream="out")
+    context = ComputationContext(computation)
 
-    records = runner.contexts["test-sklearn"].records
-    assert len(records) == 1
+    data = pd.DataFrame(X_test).to_json(orient="records")
+    computation.process_record(context, Record("transform", data, None))
 
-    record = records[0]
-    assert record.key == "iris-key"
+    assert len(context.records) == 1
+    assert len(context.records["out"]) == 1
+
+    record = context.records["out"][0]
+    assert record.key == "transform"
     assert np.allclose(transformer.transform(X_test), json.loads(record.data))
