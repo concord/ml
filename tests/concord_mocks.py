@@ -1,7 +1,6 @@
 from __future__ import division, print_function
 
 from collections import namedtuple
-from time import time as current_time
 
 Record = namedtuple("Record", ["key", "data", "userStream"])
 
@@ -25,12 +24,10 @@ class ComputationContext(object):
 
     def __str__(self):
         return "ComputationContext({})".format(self.computation.name)
-    def __repr__(self):
-        return "ComputationContext({})".format(self.computation.name)
 
     def produce_record(self, stream, key, data):
-        assert isinstance(key, str)  # TODO Py3 compat
-        assert isinstance(data, str) # TODO Py3 compat
+        assert isinstance(key, str)   # TODO Py3 compat
+        assert isinstance(data, str)  # TODO Py3 compat
         record = Record(key, data, stream)
         self.records.append(record)
 
