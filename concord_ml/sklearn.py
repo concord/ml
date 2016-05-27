@@ -6,37 +6,35 @@ import pandas as pd
 from concord.computation import Computation, Metadata
 
 
-class SklearnPipelineComputation(Computation):
-    def __init__(self, name, pipeline, **kwargs):
+class SklearnComputationMixin(Computation):
+    def __init__(self, name, model, istreams, ostream):
+        self.istreams = istreams
+        self.ostream = ostream
 
-        # Hack to emulate keyword-only arguments (waiting on Python 3)
-        self.istreams = kwargs.pop("istreams", [])
-        self.predict_ostream = kwargs.pop("predict_ostream", None)
-
-        if kwargs:
-            key, __ = kwargs.popitem()
-            msg = "__init__() got an unexpected keword argument {0}"
-            raise TypeError(msg.format(repr(key)))
-
-        self.pipeline = pipeline
+        self.model = model
         self.name = name
 
     def init(self, ctx):
-        # TODO: Logging
-        pass
+        pass # TODO: Logging
 
     def metadata(self):
-        if self.predict_ostream is not None:
-            ostreams = [self.predict_ostream]
-        else:
-            ostreams = []
         return Metadata(name=self.name,
                         istreams=self.istreams,
-                        ostreams=ostreams)
+                        ostreams=[self.ostream])
+
+    def process(self, data):
+        raise NotImplementedError
 
     def process_record(self, ctx, record):
         # TODO: Real serialization
         data = pd.read_json(record.data, orient="records")
-        prediction = self.pipeline.predict(data)
-        ctx.produce_record(self.predict_ostream, record.key,
+
+        prediction = self.process(data)
+
+        ctx.produce_record(self.ostream, record.key,
                            json.dumps(prediction.tolist()))
+
+
+class SklearnPredictComputation(SklearnComputationMixin):
+    def process(self, data):
+        return self.model.predict(data)

@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from concord.computation import Metadata, StreamGrouping
-from concord_ml.sklearn import SklearnPipelineComputation
+from concord_ml.sklearn import SklearnPredictComputation
 
 from concord_mocks import Runner
 
@@ -37,34 +37,22 @@ class IrisGenerator():
         return Metadata(name=self.name, istreams=[], ostreams=[self.ostream])
 
 
-def test_sklearn_pipeline_computation_constructor():
-    c1 = SklearnPipelineComputation("test-1", None,
-                                    istreams=[("iris-1", 1)],
-                                    predict_ostream="hello")
-    m1 = c1.metadata()
-    assert isinstance(m1, Metadata)
-    assert m1.name == "test-1"
-    assert m1.istreams == [("iris-1", 1)]
-    assert m1.ostreams == ["hello"]
-
-    c2 = SklearnPipelineComputation("test-2", None,
-                                    istreams=[("iris-2", 2)])
-    m2 = c2.metadata()
-    assert isinstance(m2, Metadata)
-    assert m2.istreams == [("iris-2", 2)]
-    assert m2.ostreams == []
-
-    with pytest.raises(TypeError) as excinfo:
-        SklearnPipelineComputation("test-2", None, badkeyword="hello")
-    assert "badkeyword" in str(excinfo.value)
+@pytest.mark.parametrize("cls", [SklearnPredictComputation])
+def test_sklearn_constructors(cls):
+    c = cls("test-1", None, istreams=[("iris-1", 1)], ostream="hello")
+    m = c.metadata()
+    assert isinstance(m, Metadata)
+    assert m.name == "test-1"
+    assert m.istreams == [("iris-1", 1)]
+    assert m.ostreams == ["hello"]
 
 
-def test_sklearn_pipeline_computation():
+def test_sklearn_predict_computation():
     generator = IrisGenerator("iris", "test-sklearn")
 
     istreams = [("iris", StreamGrouping.GROUP_BY)]
-    computation = SklearnPipelineComputation("test-sklearn", model,
-                                             istreams=istreams)
+    computation = SklearnPredictComputation("test-sklearn", model,
+                                             istreams=istreams, ostream=None)
     runner = Runner([generator, computation])
     runner.run()
 

@@ -18,8 +18,9 @@ class ComputationContext(object):
     def __init__(self, runner, computation):
         self.runner = runner
         self.computation = computation
-        self.subscribers = computation.metadata().ostreams
-
+        self.subscribers = [stream
+                            for stream in computation.metadata().ostreams
+                            if stream is not None]
         self.records = []
 
     def __str__(self):
