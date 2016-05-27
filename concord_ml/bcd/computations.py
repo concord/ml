@@ -1,7 +1,8 @@
 """Local implementation for Bayesian Changepoint Detection"""
-import numpy as np
-from concord.computation import (Computation, Metadata)
 import datetime as dt
+
+import numpy as np
+from concord.computation import Computation, Metadata
 
 
 class BayesianChangepointDetection(Computation):
