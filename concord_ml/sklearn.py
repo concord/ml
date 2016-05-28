@@ -5,8 +5,24 @@ import pandas as pd
 
 from concord.computation import Computation, Metadata
 
+parameter_docstring = """
+
+    Parameters
+    ----------
+    name : str
+        Name of computation
+    model : scikit-learn model
+        scikit-learn model that the computation wraps
+    istreams : Tuple[str, enum]
+        List of input streams that the computation takes
+    ostream : str
+        Output stream
+"""
 
 class SklearnBase(Computation):
+    __doc__ = """Base class for scikit-learn integration""" \
+              + parameter_docstring
+
     def __init__(self, name, model, istreams, ostream):
         self.istreams = istreams
         self.ostream = ostream
@@ -35,10 +51,16 @@ class SklearnBase(Computation):
 
 
 class SklearnPredict(SklearnBase):
+    __doc__ = """Concord computation wrapping scikit-learn predictor""" \
+              + parameter_docstring
+
     def process(self, data):
         return self.model.predict(data)
 
 
 class SklearnTransform(SklearnBase):
+    __doc__ = """Concord computation wrapping scikit-learn transformer""" \
+              + parameter_docstring
+
     def process(self, data):
         return self.model.transform(data)
