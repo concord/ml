@@ -42,6 +42,24 @@ class SklearnBase(Computation):
         raise NotImplementedError
 
     def process_record(self, ctx, record):
+        """Runs scikit-learn model on record.
+
+        The input data should be a JSON-decodeable bytestring of
+        [ {column_name -> value} ], where each element of the list is a
+        row to be classified.
+
+        The output data is JSON-decodeable bytestring of a list, where
+        each element represents the model output for the corresponding
+        row.
+
+        Parameters
+        ----------
+        ctx : concord.ComputationContext
+            The Concord context
+        record : concord.Record
+            `record.data` : JSON-decodeable bytestring of List[Dict]
+        """
+
         data = pd.read_json(record.data, orient="records")
 
         prediction = self.process(data)

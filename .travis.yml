@@ -21,6 +21,9 @@ install:
   - source activate bfd
   - conda install --yes numpy=$NUMPY_VERSION pandas=$PANDAS_VERSION
 
+before_script:
+  - conda env export    # for reproducible environments
+
 script:
   - pip install -e .
   - flake8
