@@ -1,26 +1,58 @@
 """Local implementation for Bayesian Changepoint Detection"""
+import datetime as dt
 
 import numpy as np
+from concord.computation import Computation, Metadata
 
 
-class BayesianChangepointDetection(object):
+class BayesianChangepointDetection(Computation):
     """ Bayesian Changepoint Detection implementation
-
     Based on algorithm from http://arxiv.org/abs/0710.3742.
-
-    Args:
-        hazard_function: A function that maps from the length of the current
-                         run to the probability of a changepoint.
-                         Callable[[int], float]
-        distribution: The distribution that the time series is assumed to
-                      follow. Should follow interface defined in
-                      `bcd.distributions.Distribution`.
     """
-    def __init__(self, hazard, distribution):
+    def __init__(self, hazard, distribution, istream, ostream=[]):
+        """ Constructor for BCD computation
+
+        Args:
+            hazard: A function that maps from the length of the current
+                    run to the probability of a changepoint.
+                    Callable[[int], float]
+            distribution: The distribution that the time series is assumed to
+                      follow. Should follow interface defined in
+                      `concord_ml.bcd.distributions.Distribution`.
+            istream (List[str]): istreams the computation should listen to.
+            ostream (List[str]): ostreams the computation should produce to.
+        """
         self.hazard = hazard
         self.distribution = distribution
+        self.istream = istream
+        self.ostream = ostream
         self.time = 0
         self.Pr = np.ones(1)
+        self.present = dt.date.min.isoformat()  # init w/ earliest date
+
+    def process_record(self, ctx, record):
+        """ Sends most probable run length to all ostreams.
+
+            Args:
+                record (Dict[str, str]): record.key contains isoformat
+                    timestamp associated with record.data.
+        """
+        # Only process if timestamp of data is after self.present.
+        # Because isoformat() returns an ISO 8601 date string,
+        # we can use > and < to compare if incoming data is newer
+        # or older than the last piece of data we processed.
+        if record.key > self.present:
+            self.present = record.key  # Move up self.present
+            result = self.step(float(record.data))
+            if self.ostream is not None:
+                for stream in self.ostream:
+                    ctx.produce_record(stream, '~', str(result.argmax()))
+
+    def metadata(self):
+        return Metadata(
+            name='BayesianChangepointDetection',
+            istreams=self.istream,
+            ostreams=self.ostream)
 
     def step(self, observation):
         """ Calculates the probability of a changepoint at the current time
@@ -37,7 +69,7 @@ class BayesianChangepointDetection(object):
 
         H = self.hazard(np.arange(self.time))
         old = self.Pr
-        self.Pr = np.zeros(self.time + 1)   # +1 because 0 <= r <= time
+        self.Pr = np.zeros(self.time + 1)  # +1 because 0 <= r <= time
 
         predprob = self.distribution.pdf(observation)
         self.distribution.update(observation)

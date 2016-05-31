@@ -5,6 +5,10 @@ language: python
 python:
   - "2.7"
 
+env:
+  - NUMPY_VERSION="1.10" PANDAS_VERSION="0.17"
+  - NUMPY_VERSION="1.11" PANDAS_VERSION="0.18"
+
 install:
   # Install conda
   - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
@@ -15,15 +19,15 @@ install:
   # Install dependencies
   - conda env create --name bfd --file environment.yml
   - source activate bfd
+  - conda install --yes numpy=$NUMPY_VERSION pandas=$PANDAS_VERSION
+
+before_script:
+  - conda env export    # for reproducible environments
 
 script:
+  - pip install -e .
   - flake8
   - PYTHONPATH=.:PYTHONPATH py.test -v
 
 notifications:
-  slack: 
-    on_success: change
-    on_failure: always
-    rooms:
-      - adi-labs:xOzEFUlnozndGW2FVejy2Fdh
   email: false

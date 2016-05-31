@@ -84,7 +84,7 @@ class Gaussian(Distribution):
             of times update is called
         """
         variance = self.beta * (self.kappa + 1) / (self.alpha * self.kappa)
-        return stats.t.pdf(x=observation, df=2*self.alpha,
+        return stats.t.pdf(x=observation, df=2 * self.alpha,
                            loc=self.mu, scale=np.sqrt(variance))
 
     def update(self, observation):
@@ -96,11 +96,12 @@ class Gaussian(Distribution):
             None
         """
 
+        delta = observation - self.mu
+
         new_kappa = self.kappa + 1
-        new_mu = (self.kappa * self.mu + observation) / (self.kappa + 1)
-        new_alpha = (self.alpha + 0.5)
-        new_beta = self.beta + ((self.kappa * (observation - self.mu) ** 2) /
-                                (2 * self.kappa + 2))
+        new_mu = self.mu + delta / new_kappa
+        new_alpha = self.alpha + 0.5
+        new_beta = self.beta + (self.kappa * delta ** 2 / (2 * self.kappa + 2))
 
         self.kappa = np.concatenate([self.kappa0, new_kappa])
         self.mu = np.concatenate([self.mu0, new_mu])
